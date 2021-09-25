@@ -36,9 +36,19 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
         }
 
         /**
+         * Main Extension Instance.
+         */
+        public static function instance() {
+            if ( is_null( self::$_instance ) ) {
+                self::$_instance = new self();
+            }
+            return self::$_instance;
+        }
+
+        /**
          * Adding the Display Only checkbox to the product page for admins.
          */
-        function wdop_add_admin_checkbox() {
+        function wdop_add_display_only_checkbox() {
             global $product_object;
             // Display only.
             woocommerce_wp_checkbox(
@@ -51,11 +61,20 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
             );
         }
 
+        /*
+         * Save our Display Only product field
+         */
+        function wdop_save_display_only_checkbox( $post_id ){
+            $displayonly_checkbox = isset( $_POST['_wdop_display_only'] ) ? 'yes' : 'no';
+            update_post_meta( $post_id, '_wdop_display_only', $displayonly_checkbox );
+        }
+
         /**
          * Function for getting everything set up and ready to run.
          */
         private function init() {
-            add_action( 'woocommerce_product_options_pricing', 'wdop_add_admin_checkbox' );
+            add_action( 'woocommerce_product_options_pricing', array( $this, 'wdop_add_display_only_checkbox' ) );
+            add_action( 'woocommerce_process_product_meta', array( $this, 'wdop_save_display_only_checkbox') );
         }
     }
 endif;
