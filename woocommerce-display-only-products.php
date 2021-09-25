@@ -9,7 +9,7 @@
  * Author URI: http://s-oh.co.uk
  * Developer: Stephen O'Hara
  * Developer URI: http://s-oh.co.uk
- * Text Domain: my-extension
+ * Text Domain: woocommerce-display-only-products
  * Domain Path: /languages
  *
  * License: GNU General Public License v3.0
@@ -69,12 +69,46 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
             update_post_meta( $post_id, '_wdop_display_only', $displayonly_checkbox );
         }
 
+        function wdop_save_display_only_message() {
+
+            echo '<p><a href="#" class="button">Call Us To Enquire!</a></p>';
+            echo '<p><em>Please contact us to discuss purchasing this item<em></p>';
+            // TODO: make this configurable and add link to hook into contact form which attaches product
+        }
+
+        /**
+         * Hide the Add to Cart button on the single product page
+         */
+        public function wdop_single_product_hide_cart_buttons() {
+            global $product;
+
+            $display_only = $product->get_meta('_wdop_display_only');
+
+            if (!empty($display_only)) {
+                $display_only = wc_string_to_bool($display_only);
+            } else {
+                $display_only = false;
+            }
+
+            if($display_only) {
+                if ($product->is_type('variable')) {
+                    // Remove Add to Cart on Variation
+                    remove_action('woocommerce_single_variation', 'woocommerce_single_variation_add_to_cart_button', 20);
+                } else {
+                    // Remove Add to Cart
+                    remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_add_to_cart', 30);
+                }
+                add_action( 'woocommerce_single_product_summary', array( $this, 'wdop_save_display_only_message' ), 35 );
+            }
+        }
+
         /**
          * Function for getting everything set up and ready to run.
          */
         private function init() {
             add_action( 'woocommerce_product_options_pricing', array( $this, 'wdop_add_display_only_checkbox' ) );
             add_action( 'woocommerce_process_product_meta', array( $this, 'wdop_save_display_only_checkbox') );
+            add_action( 'woocommerce_single_product_summary', array ( $this, 'wdop_single_product_hide_cart_buttons' ) );
         }
     }
 endif;
