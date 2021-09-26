@@ -70,10 +70,22 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
         }
 
         function wdop_save_display_only_message() {
-
             echo '<p><a href="#" class="button">Call Us To Enquire!</a></p>';
             echo '<p><em>Please contact us to discuss purchasing this item<em></p>';
             // TODO: make this configurable and add link to hook into contact form which attaches product
+        }
+        /**
+         * Function to find if a passed product is display only. Returns bool.
+         */
+        protected function wdop_is_display_only( $product ) {
+            $display_only = $product->get_meta('_wdop_display_only');
+
+            if ( !empty( $display_only ) ) {
+                $display_only = wc_string_to_bool($display_only);
+            } else {
+                $display_only = false;
+            }
+            return $display_only;
         }
 
         /**
@@ -82,16 +94,8 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
         public function wdop_single_product_hide_cart_buttons() {
             global $product;
 
-            $display_only = $product->get_meta('_wdop_display_only');
-
-            if (!empty($display_only)) {
-                $display_only = wc_string_to_bool($display_only);
-            } else {
-                $display_only = false;
-            }
-
-            if($display_only) {
-                if ($product->is_type('variable')) {
+            if ( $this->wdop_is_display_only( $product ) ) {
+                if ( $product->is_type('variable') ) {
                     // Remove Add to Cart on Variation
                     remove_action('woocommerce_single_variation', 'woocommerce_single_variation_add_to_cart_button', 20);
                 } else {
@@ -103,12 +107,24 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
         }
 
         /**
+         * Hide the Add to Cart button on the loop page
+         */
+        public function wdop_shop_loop_product_hide_cart_buttons( $add_to_cart_link, $product ) {
+            if ( $this->wdop_is_display_only( $product ) ) {
+                $link = $product->get_permalink();
+                $add_to_cart_link = do_shortcode('<a href="'.$link.'" class="button">View Product</a>');
+            }
+            return $add_to_cart_link;
+        }
+
+        /**
          * Function for getting everything set up and ready to run.
          */
         private function init() {
             add_action( 'woocommerce_product_options_pricing', array( $this, 'wdop_add_display_only_checkbox' ) );
             add_action( 'woocommerce_process_product_meta', array( $this, 'wdop_save_display_only_checkbox') );
             add_action( 'woocommerce_single_product_summary', array ( $this, 'wdop_single_product_hide_cart_buttons' ) );
+            add_filter( 'woocommerce_loop_add_to_cart_link', array( $this, 'wdop_shop_loop_product_hide_cart_buttons'), 10, 2);
         }
     }
 endif;
