@@ -216,7 +216,7 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
         function wdop_save_display_only_message() {
             $options = (array) get_option( 'woo_display_only_products_options' );
             $url = isset( $options['btn_url'] ) ? esc_attr( $options['btn_url'] ) : '#';
-            if ( isset( $options['btn_txt'] ) ) {
+            if ( isset( $options['btn_txt'] ) && !empty( $options['btn_txt'] ) ) {
                 echo '<p><a href="' . $url . '" class="button">' . esc_attr( $options['btn_txt'] ) . '</a></p>';
             }
             if ( isset( $options['extra_info'] ) ) {
