@@ -82,7 +82,7 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
         }
 
         /**
-         * Register plugin settings
+         * Register plugin settings.
          */
         public function register_settings() {
             // Register a setting and its data.
@@ -122,10 +122,7 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
         }
 
         /**
-         * Notice Button Text.
-         *
-         * @since   1.3.0
-         * @return  void
+         * Display Only Button Text.
          */
         public function btn_txt_callback() {
             $placeholder = _x( 'Call Us To Enquire', 'settings field placeholder', 'woo-display-only-products' );
@@ -145,10 +142,7 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
         }
 
         /**
-         * Notice Button URL.
-         *
-         * @since   1.3.0
-         * @return  void
+         * Display Only Button URL.
          */
         public function btn_url_callback() {
             $placeholder = _x( 'tel:+4411112223333', 'settings field placeholder', 'woo-display-only-products' );
@@ -168,10 +162,7 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
         }
 
         /**
-         * Notice Content.
-         *
-         * @since   1.3.0
-         * @return  void
+         * Message to be displayed below custom button (optional).
          */
         public function extra_info_callback() {
             $placeholder = _x( 'Please contact us to discuss purchasing this item.', 'settings field placeholder', 'woo-display-only-products' );
@@ -206,14 +197,17 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
         }
 
         /*
-         * Save our Display Only product field
+         * Save our Display Only product field.
          */
         function wdop_save_display_only_checkbox( $post_id ){
             $displayonly_checkbox = isset( $_POST['_wdop_display_only'] ) ? 'yes' : 'no';
             update_post_meta( $post_id, '_wdop_display_only', $displayonly_checkbox );
         }
 
-        function wdop_save_display_only_message() {
+        /*
+         * Button and message for display only items.
+         */
+        function wdop_template_display_only_message() {
             $options = (array) get_option( 'woo_display_only_products_options' );
             $url = isset( $options['btn_url'] ) ? esc_attr( $options['btn_url'] ) : '#';
             if ( isset( $options['btn_txt'] ) && !empty( $options['btn_txt'] ) ) {
@@ -238,7 +232,7 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
         }
 
         /**
-         * Hide the Add to Cart button on the single product page
+         * Hide the Add to Cart button on the single product page.
          */
         public function wdop_single_product_hide_cart_buttons() {
             global $product;
@@ -251,12 +245,12 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
                     // Remove Add to Cart
                     remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_add_to_cart', 30);
                 }
-                add_action( 'woocommerce_single_product_summary', array( $this, 'wdop_save_display_only_message' ), 35 );
+                add_action( 'woocommerce_single_product_summary', array( $this, 'wdop_template_display_only_message' ), 35 );
             }
         }
 
         /**
-         * Hide the Add to Cart button on the loop page
+         * Hide the Add to Cart button on the loop page.
          */
         public function wdop_shop_loop_product_hide_cart_buttons( $add_to_cart_link, $product ) {
             if ( $this->wdop_is_display_only( $product ) ) {
@@ -285,7 +279,7 @@ endif;
  */
 function woo_display_only_products_initialize() {
 
-    // This is also a great place to check for the existence of the WooCommerce class
+    // This is also a great place to check for the existence of the WooCommerce class.
     if ( ! class_exists( 'WooCommerce' ) ) {
         // TODO: Add a WordPress admin notice if WooCommerce isn't installed.
         return;
