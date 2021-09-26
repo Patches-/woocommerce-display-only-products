@@ -9,7 +9,7 @@
  * Author URI: http://s-oh.co.uk
  * Developer: Stephen O'Hara
  * Developer URI: http://s-oh.co.uk
- * Text Domain: woocommerce-display-only-products
+ * Text Domain: woo-display-only-products
  * Domain Path: /languages
  *
  * License: GNU General Public License v3.0
@@ -46,6 +46,150 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
         }
 
         /**
+         * Create plugin options page.
+         */
+        public function add_submenu_page() {
+            add_submenu_page(
+                'woocommerce',
+                _x( 'Display Only Settings', 'page title', 'woo-display-only-products' ),
+                _x( 'Display Only Products', 'menu title', 'woo-display-only-products' ),
+                'manage_woocommerce',
+                'woo-display-only-products',
+                array( $this, 'wdop_options_page' )
+            );
+        }
+
+        /**
+         * Render and display plugin options page.
+         */
+        public function wdop_options_page() {
+            $this->options = (array) get_option( 'woo_display_only_products_options' );
+            ?>
+
+            <div class="wrap">
+                <form method="POST" action="options.php">
+                    <h1>
+                        <?php esc_html_e( 'WooCommerce Display Only Products', 'woo-display-only-products' ); ?>
+                    </h1>
+                    <?php
+                    // Get settings fields.
+                    settings_fields( 'woo_display_only_products_settings_fields' );
+                    do_settings_sections( 'woo_display_only_products_settings_sections' );
+                    submit_button();
+                    ?>
+                </form>
+            <?php
+        }
+
+        /**
+         * Register plugin settings
+         */
+        public function register_settings() {
+            // Register a setting and its data.
+            register_setting( 'woo_display_only_products_settings_fields', 'woo_display_only_products_options' );
+
+            // Add a new section to a settings page.
+            add_settings_section(
+                'woo_display_only_products_settings_section',
+                '',
+                '',
+                'woo_display_only_products_settings_sections'
+            );
+
+            add_settings_field(
+                'btn_txt',
+                esc_html_x( 'Button Text', 'settings field label', 'woo-display-only-products' ),
+                array( $this, 'btn_txt_callback' ),
+                'woo_display_only_products_settings_sections',
+                'woo_display_only_products_settings_section'
+            );
+
+            add_settings_field(
+                'btn_url',
+                esc_html_x( 'Button URL', 'settings field label', 'woo-display-only-products' ),
+                array( $this, 'btn_url_callback' ),
+                'woo_display_only_products_settings_sections',
+                'woo_display_only_products_settings_section'
+            );
+
+            add_settings_field(
+                'extra_info',
+                esc_html_x( 'Extra Info', 'settings field label', 'woo-display-only-products' ),
+                array( $this, 'extra_info_callback' ),
+                'woo_display_only_products_settings_sections',
+                'woo_display_only_products_settings_section'
+            );
+        }
+
+        /**
+         * Notice Button Text.
+         *
+         * @since   1.3.0
+         * @return  void
+         */
+        public function btn_txt_callback() {
+            $placeholder = _x( 'Call Us To Enquire', 'settings field placeholder', 'woo-display-only-products' );
+            $value       = isset( $this->options['btn_txt'] ) ? $this->options['btn_txt'] : null;
+            printf(
+                '<input 
+					type="text" 
+					class="regular-text" 
+					name="woo_display_only_products_options[btn_txt]" 
+					id="btn_txt" 
+					placeholder="%s" 
+					value="%s" 
+				/>',
+                esc_attr( $placeholder ),
+                esc_html( $value )
+            );
+        }
+
+        /**
+         * Notice Button URL.
+         *
+         * @since   1.3.0
+         * @return  void
+         */
+        public function btn_url_callback() {
+            $placeholder = _x( 'tel:+4411112223333', 'settings field placeholder', 'woo-display-only-products' );
+            $value       = isset( $this->options['btn_url'] ) ? $this->options['btn_url'] : null;
+            printf(
+                '<input 
+					type="url" 
+					class="regular-text" 
+					name="woo_display_only_products_options[btn_url]" 
+					id="btn_url" 
+					placeholder="%s" 
+					value="%s" 
+				/>',
+                esc_attr( $placeholder ),
+                esc_url( $value )
+            );
+        }
+
+        /**
+         * Notice Content.
+         *
+         * @since   1.3.0
+         * @return  void
+         */
+        public function extra_info_callback() {
+            $placeholder = _x( 'Please contact us to discuss purchasing this item.', 'settings field placeholder', 'woo-display-only-products' );
+            $value       = isset( $this->options['extra_info'] ) ? esc_attr( $this->options['extra_info'] ) : null;
+            printf(
+                '<textarea 
+					class="large-text" 
+					rows="5" 
+					name="woo_display_only_products_options[extra_info]" 
+					id="extra_info" 
+					placeholder="%s"
+				>%s</textarea>',
+                esc_attr( $placeholder ),
+                esc_html( $value )
+            );
+        }
+
+        /**
          * Adding the Display Only checkbox to the product page for admins.
          */
         function wdop_add_display_only_checkbox() {
@@ -70,9 +214,14 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
         }
 
         function wdop_save_display_only_message() {
-            echo '<p><a href="#" class="button">Call Us To Enquire!</a></p>';
-            echo '<p><em>Please contact us to discuss purchasing this item<em></p>';
-            // TODO: make this configurable and add link to hook into contact form which attaches product
+            $options = (array) get_option( 'woo_display_only_products_options' );
+            $url = isset( $options['btn_url'] ) ? esc_attr( $options['btn_url'] ) : '#';
+            if ( isset( $options['btn_txt'] ) ) {
+                echo '<p><a href="' . $url . '" class="button">' . esc_attr( $options['btn_txt'] ) . '</a></p>';
+            }
+            if ( isset( $options['extra_info'] ) ) {
+                echo '<p><em>' . esc_attr( $options['extra_info'] ) . '<em></p>';
+            }
         }
         /**
          * Function to find if a passed product is display only. Returns bool.
@@ -121,6 +270,8 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
          * Function for getting everything set up and ready to run.
          */
         private function init() {
+            add_action( 'admin_menu', array( $this, 'add_submenu_page' ), 999 );
+            add_action( 'admin_init', array( $this, 'register_settings' ) );
             add_action( 'woocommerce_product_options_pricing', array( $this, 'wdop_add_display_only_checkbox' ) );
             add_action( 'woocommerce_process_product_meta', array( $this, 'wdop_save_display_only_checkbox') );
             add_action( 'woocommerce_single_product_summary', array ( $this, 'wdop_single_product_hide_cart_buttons' ) );
@@ -132,7 +283,7 @@ endif;
 /**
  * Function for delaying initialization of the extension until after WooComerce is loaded.
  */
-function woocommerce_display_only_products_initialize() {
+function woo_display_only_products_initialize() {
 
     // This is also a great place to check for the existence of the WooCommerce class
     if ( ! class_exists( 'WooCommerce' ) ) {
@@ -140,6 +291,6 @@ function woocommerce_display_only_products_initialize() {
         return;
     }
 
-    $GLOBALS['woocommerce_display_only_products'] = Woocommerce_Display_Only_Products::instance();
+    $GLOBALS['woo_display_only_products'] = Woocommerce_Display_Only_Products::instance();
 }
-add_action( 'plugins_loaded', 'woocommerce_display_only_products_initialize', 10 );
+add_action( 'plugins_loaded', 'woo_display_only_products_initialize', 10 );
