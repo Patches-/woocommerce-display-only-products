@@ -65,8 +65,6 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
         public function wdop_options_page() {
             $this->options = (array) get_option( 'woo_display_only_products_options' );
             ?>
-
-            <div class="wrap">
                 <form method="POST" action="options.php">
                     <h1>
                         <?php esc_html_e( 'WooCommerce Display Only Products', 'woo-display-only-products' ); ?>
@@ -129,13 +127,13 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
             $value       = isset( $this->options['btn_txt'] ) ? $this->options['btn_txt'] : null;
             printf(
                 '<input 
-					type="text" 
-					class="regular-text" 
-					name="woo_display_only_products_options[btn_txt]" 
-					id="btn_txt" 
-					placeholder="%s" 
-					value="%s" 
-				/>',
+                    type="text" 
+                    class="regular-text" 
+                    name="woo_display_only_products_options[btn_txt]" 
+                    id="btn_txt" 
+                    placeholder="%s" 
+                    value="%s" 
+                />',
                 esc_attr( $placeholder ),
                 esc_html( $value )
             );
@@ -149,13 +147,13 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
             $value       = isset( $this->options['btn_url'] ) ? $this->options['btn_url'] : null;
             printf(
                 '<input 
-					type="url" 
-					class="regular-text" 
-					name="woo_display_only_products_options[btn_url]" 
-					id="btn_url" 
-					placeholder="%s" 
-					value="%s" 
-				/>',
+                    type="url" 
+                    class="regular-text" 
+                    name="woo_display_only_products_options[btn_url]" 
+                    id="btn_url" 
+                    placeholder="%s" 
+                    value="%s" 
+                />',
                 esc_attr( $placeholder ),
                 esc_url( $value )
             );
@@ -169,12 +167,12 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
             $value       = isset( $this->options['extra_info'] ) ? esc_attr( $this->options['extra_info'] ) : null;
             printf(
                 '<textarea 
-					class="large-text" 
-					rows="5" 
-					name="woo_display_only_products_options[extra_info]" 
-					id="extra_info" 
-					placeholder="%s"
-				>%s</textarea>',
+                    class="large-text" 
+                    rows="5" 
+                    name="woo_display_only_products_options[extra_info]" 
+                    id="extra_info" 
+                    placeholder="%s"
+                >%s</textarea>',
                 esc_attr( $placeholder ),
                 esc_html( $value )
             );
@@ -260,12 +258,23 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
             return $add_to_cart_link;
         }
 
+
+        public function wdop_is_purchasable($notused, $product) {
+            $display_only = $this->wdop_is_display_only($product);
+            if ($display_only) {
+                return false;
+            }
+            return true;
+        }
+
+
         /**
          * Function for getting everything set up and ready to run.
          */
         private function init() {
             add_action( 'admin_menu', array( $this, 'add_submenu_page' ), 999 );
             add_action( 'admin_init', array( $this, 'register_settings' ) );
+            add_filter( 'woocommerce_is_purchasable', array ( $this, 'wdop_is_purchasable'), 99, 2);
             add_action( 'woocommerce_product_options_pricing', array( $this, 'wdop_add_display_only_checkbox' ) );
             add_action( 'woocommerce_process_product_meta', array( $this, 'wdop_save_display_only_checkbox') );
             add_action( 'woocommerce_single_product_summary', array ( $this, 'wdop_single_product_hide_cart_buttons' ) );
