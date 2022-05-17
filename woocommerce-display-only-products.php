@@ -4,7 +4,7 @@
  * Plugin URI: http://s-oh.co.uk
  * Description: A simple plugin which allows selected products on the site to be display only with all purchase features
  * disabled.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Stephen O'Hara
  * Author URI: http://s-oh.co.uk
  * Developer: Stephen O'Hara
@@ -183,13 +183,23 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
          */
         function wdop_add_display_only_checkbox() {
             global $product_object;
+
+            // Check to see if there is current value already set
+            $currentvalue = $product_object->get_meta('_wdop_display_only');
+            // By default we want this to be enabled.
+            $value = true;
+
+            if (!empty($currentvalue)) {
+                $value = $currentvalue;
+            }
+
             // Display only.
             woocommerce_wp_checkbox(
                 array(
                     'id'          => '_wdop_display_only',
                     'label'       => __( 'Display Only', 'woocommerce' ),
                     'description' => __( 'Check this box if you do not want this item to be available for purchase on the website.', 'woocommerce' ),
-                    'value'       => wc_bool_to_string( $product_object->get_meta('_wdop_display_only') ),
+                    'value'       => wc_bool_to_string( $value ),
                 )
             );
         }
@@ -215,6 +225,7 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
                 echo '<p><em>' . esc_attr( $options['extra_info'] ) . '<em></p>';
             }
         }
+
         /**
          * Function to find if a passed product is display only. Returns bool.
          */
@@ -235,7 +246,7 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
         public function wdop_single_product_hide_cart_buttons() {
             global $product;
 
-            if ( $this->wdop_is_display_only( $product ) ) {
+            if ( $this->wdop_is_display_only( $product ) && $product->is_in_stock() ) {
                 if ( $product->is_type('variable') ) {
                     // Remove Add to Cart on Variation
                     remove_action('woocommerce_single_variation', 'woocommerce_single_variation_add_to_cart_button', 20);
@@ -251,7 +262,7 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
          * Hide the Add to Cart button on the loop page.
          */
         public function wdop_shop_loop_product_hide_cart_buttons( $add_to_cart_link, $product ) {
-            if ( $this->wdop_is_display_only( $product ) ) {
+            if ( $this->wdop_is_display_only( $product ) && $product->is_in_stock() ) {
                 $link = $product->get_permalink();
                 $add_to_cart_link = do_shortcode('<a href="'.$link.'" class="button">View Product</a>');
             }
@@ -261,10 +272,24 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
 
         public function wdop_is_purchasable($notused, $product) {
             $display_only = $this->wdop_is_display_only($product);
-            if ($display_only) {
+            if ($display_only && $product->is_in_stock()) {
                 return false;
             }
             return true;
+        }
+
+        function wdop_button_text($text) {
+            global $product;
+            if ( $this->wdop_is_display_only( $product ) && $product->is_in_stock() ) {
+                $options = (array) get_option( 'woo_display_only_products_options' );
+                if ( isset( $options['btn_txt'] ) && !empty( $options['btn_txt'] ) ) {
+                    $text = esc_attr( $options['btn_txt'] );
+                } else {
+                    $text = __('View product', 'woocommerce');
+                }
+            }
+
+            return $text;
         }
 
 
@@ -272,13 +297,13 @@ if ( ! class_exists( 'Woocommerce_Display_Only_Products' ) ) :
          * Function for getting everything set up and ready to run.
          */
         private function init() {
-            add_action( 'admin_menu', array( $this, 'add_submenu_page' ), 999 );
-            add_action( 'admin_init', array( $this, 'register_settings' ) );
+            add_action( 'admin_menu', array ( $this, 'add_submenu_page' ), 999 );
+            add_action( 'admin_init', array ( $this, 'register_settings' ) );
             add_filter( 'woocommerce_is_purchasable', array ( $this, 'wdop_is_purchasable'), 99, 2);
-            add_action( 'woocommerce_product_options_pricing', array( $this, 'wdop_add_display_only_checkbox' ) );
-            add_action( 'woocommerce_process_product_meta', array( $this, 'wdop_save_display_only_checkbox') );
+            add_action( 'woocommerce_product_options_pricing', array ( $this, 'wdop_add_display_only_checkbox' ) );
+            add_action( 'woocommerce_process_product_meta', array ( $this, 'wdop_save_display_only_checkbox') );
             add_action( 'woocommerce_single_product_summary', array ( $this, 'wdop_single_product_hide_cart_buttons' ) );
-            add_filter( 'woocommerce_loop_add_to_cart_link', array( $this, 'wdop_shop_loop_product_hide_cart_buttons'), 10, 2);
+            add_filter( 'woocommerce_loop_add_to_cart_link', array ( $this, 'wdop_shop_loop_product_hide_cart_buttons'), 10, 2);
         }
     }
 endif;
